@@ -1,0 +1,19 @@
+# In your project root directory
+cat > .gitignore << EOL
+# Environment variables
+.env
+
+# Virtual environment
+venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# macOS
+.DS_Store
+
+# Streamlit
+.streamlit/secrets.toml
+EOL
