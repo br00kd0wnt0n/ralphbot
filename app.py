@@ -3,6 +3,10 @@ import os
 import openai
 from dotenv import load_dotenv
 from company_knowledge import COMPANY_PROMPT
+from PIL import Image
+
+# IMPORTANT: This must be the first Streamlit command
+st.set_page_config(page_title="RalphBOT NY", page_icon=":robot_face:")
 
 # Load API key from environment variables or Streamlit secrets
 load_dotenv()  # This loads .env file if available (for local development)
@@ -24,12 +28,20 @@ if not api_key:
 # Configure the OpenAI API key
 openai.api_key = api_key
 
-# Add this near the top of your app.py file
-from PIL import Image
-import streamlit as st
+# Display the logo
+try:
+    logo = Image.open("logo.png")
+    st.image(logo, width=200)
+except Exception as e:
+    # Alternative approach using HTML/CSS instead of an image file
+    st.markdown("""
+        <div style='text-align: center; background-color: #E90080; padding: 10px; border-radius: 5px; margin-bottom: 20px;'>
+            <h1 style='color: white; font-family: monospace;'>RALPH</h1>
+        </div>
+        """, unsafe_allow_html=True)
 
 # App title and styling
-st.set_page_config(page_title="RalphBOT NY", page_icon=":robot_face:")
+st.set_page_config(page_title="RalphBOT NY v1.0", page_icon=":robot_face:")
 
 # Display logo
 try:
