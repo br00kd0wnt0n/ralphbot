@@ -24,6 +24,21 @@ if not api_key:
 # Configure the OpenAI API key
 openai.api_key = api_key
 
+# Add this near the top of your app.py file
+from PIL import Image
+import streamlit as st
+
+# App title and styling
+st.set_page_config(page_title="RalphBOT NY", page_icon=":robot_face:")
+
+# Display logo
+try:
+    logo = Image.open("logo.png")  # Adjust the path if you put it in a different location
+    st.image(logo, width=200)
+except:
+    # Fallback if image isn't found
+    pass
+
 # App title and styling
 st.set_page_config(page_title="RalphBOT NY", page_icon=":robot_face:")
 st.title("RalphBOT NY v0.1")
