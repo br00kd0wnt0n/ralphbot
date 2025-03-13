@@ -28,11 +28,11 @@ openai.api_key = api_key
 # Display logo and title
 st.markdown("""
     <div style='text-align: center; background-color: #E90080; padding: 10px; border-radius: 5px; margin-bottom: 20px;'>
-        <h1 style='color: white; font-family: monospace;'>RALPH</h1>
+        <h1 style='color: white; font-family: monospace;'>ralphBOT v0.1</h1>
     </div>
     """, unsafe_allow_html=True)
 
-st.title("RalphBOT NY v1.0")
+st.title("I'm definitely not Skynet")
 
 # Initialize session state for chat history
 if "messages" not in st.session_state:
