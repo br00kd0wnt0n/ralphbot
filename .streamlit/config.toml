@@ -1,9 +1,12 @@
 [theme]
-primaryColor = "#E90080"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F2F6"
-textColor = "#262730"
-font = "sans serif"
+primaryColor = "#E90080"  # Ralph's magenta color
+backgroundColor = "#191919"  # Dark background 
+secondaryBackgroundColor = "#333333"  # Darker gray for contrast
+textColor = "#FFFFFF"  # White text for better readability on dark background
+font = "monospace"  # More distinctive, technical look
 
 [browser]
 gatherUsageStats = false
+
+[server]
+enableStaticServing = true
