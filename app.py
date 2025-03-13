@@ -1,13 +1,13 @@
 import streamlit as st
 import os
-from openai import OpenAI
+import openai
 from dotenv import load_dotenv
 from company_knowledge import COMPANY_PROMPT
 
 # Load API key from environment variables or Streamlit secrets
 load_dotenv()  # This loads .env file if available (for local development)
 
-# Try to get API key from environment variables or Streamlit secrets
+# Try to get API key from various sources
 api_key = os.getenv("OPENAI_API_KEY")
 
 # If not found in environment, check Streamlit secrets
@@ -21,8 +21,8 @@ if not api_key:
     st.error("OpenAI API key not found. Please add it to your environment variables or Streamlit secrets.")
     st.stop()
 
-# Initialize OpenAI client
-client = OpenAI(api_key=api_key)
+# Configure the OpenAI API key
+openai.api_key = api_key
 
 # App title and styling
 st.set_page_config(page_title="RalphBOT NY", page_icon=":robot_face:")
@@ -63,15 +63,16 @@ if user_query:
         full_response = ""
         
         try:
-            stream = client.chat.completions.create(
+            # Use the older API format which is more compatible
+            response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=api_messages,
                 stream=True
             )
             
             # Stream the response
-            for chunk in stream:
-                if chunk.choices and chunk.choices[0].delta.content is not None:
+            for chunk in response:
+                if 'content' in chunk.choices[0].delta and chunk.choices[0].delta.content is not None:
                     content = chunk.choices[0].delta.content
                     full_response += content
                     message_placeholder.markdown(full_response + "▌")
