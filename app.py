@@ -32,7 +32,7 @@ st.markdown("""
     </div>
     """, unsafe_allow_html=True)
 
-st.title("I'm definitely not Skynet")
+st.title("(definitely not Skynet)")
 
 # Initialize session state for chat history
 if "messages" not in st.session_state:
