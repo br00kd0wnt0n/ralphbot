@@ -250,7 +250,7 @@ def click_button3():
     st.session_state.used_suggestions.add(suggestions[2])
 
 # Display buttons with dynamic text
-st.markdown("##### Try asking about:")
+st.markdown("##### Try asking about:")  # Keep only this one
 col1, col2, col3 = st.columns(3)
 
 with col1:
