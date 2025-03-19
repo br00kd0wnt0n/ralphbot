@@ -7,6 +7,23 @@ from company_knowledge import COMPANY_PROMPT
 # This MUST be the first Streamlit command
 st.set_page_config(page_title="v0.2", page_icon=":robot_face:")
 
+# Initialize session state for chat history and welcome message
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+if "welcomed" not in st.session_state:
+    st.session_state.welcomed = False
+
+# Initialize button state variables
+if "button_clicked" not in st.session_state:
+    st.session_state.button_clicked = False
+    
+if "button_question" not in st.session_state:
+    st.session_state.button_question = ""
+
+if "used_suggestions" not in st.session_state:
+    st.session_state.used_suggestions = set()
+
 # Now we can load other modules and run other code
 from PIL import Image
 
