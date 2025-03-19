@@ -132,28 +132,95 @@ if not st.session_state.welcomed:
 if "clicked_suggestion" not in st.session_state:
     st.session_state.clicked_suggestion = None
 
-# Create more reliable suggestion buttons
+# Create more reliable suggestion buttons with session state triggers
 st.markdown("##### Try asking about:")
 col1, col2, col3 = st.columns(3)
 
-# Use unique keys for each button to ensure they work consistently
+# Create a simple trigger mechanism
+if "button_clicked" not in st.session_state:
+    st.session_state.button_clicked = False
+    
+if "button_question" not in st.session_state:
+    st.session_state.button_question = ""
+
+# Define button click handlers
+def click_services():
+    st.session_state.button_clicked = True
+    st.session_state.button_question = "What services does Ralph offer?"
+
+def click_cases():
+    st.session_state.button_clicked = True
+    st.session_state.button_question = "Tell me about your work on Stranger Things"
+
+def click_temp():
+    st.session_state.button_clicked = True
+    st.session_state.button_question = "How's the temperature in the office?"
+
+# Display buttons with their handlers
 with col1:
-    if st.button("Services", key="btn_services"):
-        new_question = "What services does Ralph offer?"
-        st.session_state.messages.append({"role": "user", "content": new_question})
-        st.rerun()
+    st.button("Services", on_click=click_services)
 
 with col2:
-    if st.button("Case Studies", key="btn_cases"):
-        new_question = "Tell me about your work on Stranger Things"
-        st.session_state.messages.append({"role": "user", "content": new_question})
-        st.rerun()
+    st.button("Case Studies", on_click=click_cases)
 
 with col3:
-    if st.button("Office Temperature", key="btn_temp"):
-        new_question = "How's the temperature in the office?"
-        st.session_state.messages.append({"role": "user", "content": new_question})
-        st.rerun()
+    st.button("Office Temperature", on_click=click_temp)
+
+# Process button clicks 
+if st.session_state.button_clicked:
+    # Only proceed if we don't already have an unprocessed question
+    if not any(msg["role"] == "user" and msg == st.session_state.messages[-1] for msg in st.session_state.messages):
+        question = st.session_state.button_question
+        
+        # Display user message
+        with st.chat_message("user"):
+            st.markdown(question)
+        
+        # Add to message history
+        st.session_state.messages.append({"role": "user", "content": question})
+        
+        # Prepare messages for API call
+        api_messages = [
+            {"role": "system", "content": COMPANY_PROMPT},
+        ]
+        
+        # Add conversation history
+        for message in st.session_state.messages:
+            api_messages.append({"role": message["role"], "content": message["content"]})
+        
+        # Call OpenAI API
+        with st.chat_message("assistant"):
+            message_placeholder = st.empty()
+            full_response = ""
+            
+            try:
+                # Use the older API format which is more compatible
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=api_messages,
+                    stream=True
+                )
+                
+                # Stream the response
+                for chunk in response:
+                    if 'content' in chunk.choices[0].delta and chunk.choices[0].delta.content is not None:
+                        content = chunk.choices[0].delta.content
+                        full_response += content
+                        message_placeholder.markdown(full_response + "▌", unsafe_allow_html=True)
+                
+                # Process any audio triggers in the response
+                processed_response = handle_audio_in_response(full_response)
+                message_placeholder.markdown(processed_response, unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"An error occurred: {str(e)}")
+                full_response = "I'm sorry, I encountered an error. Please try again."
+                message_placeholder.markdown(full_response)
+        
+        # Add assistant response to chat history
+        st.session_state.messages.append({"role": "assistant", "content": full_response})
+    
+    # Reset the button click state
+    st.session_state.button_clicked = False
 
 # Process suggestion clicks BEFORE checking for direct user input
 if st.session_state.clicked_suggestion:
