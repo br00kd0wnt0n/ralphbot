@@ -149,12 +149,59 @@ if len(st.session_state.messages) == 0:
         if st.button("Office Temperature"):
             st.session_state.clicked_suggestion = "How's the temperature in the office?"
 
-# Process suggestion clicks (place this right after the buttons section)
+# Process suggestion clicks BEFORE checking for direct user input
 if st.session_state.clicked_suggestion:
     question = st.session_state.clicked_suggestion
+    
+    # Display user message
+    with st.chat_message("user"):
+        st.markdown(question)
+    
+    # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": question})
-    st.session_state.clicked_suggestion = None  # Reset the flag
-    st.rerun()
+    
+    # Prepare messages for API call
+    api_messages = [
+        {"role": "system", "content": COMPANY_PROMPT},
+    ]
+    
+    # Add conversation history
+    for message in st.session_state.messages:
+        api_messages.append({"role": message["role"], "content": message["content"]})
+    
+    # Call OpenAI API
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        full_response = ""
+        
+        try:
+            # Use the older API format which is more compatible
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=api_messages,
+                stream=True
+            )
+            
+            # Stream the response
+            for chunk in response:
+                if 'content' in chunk.choices[0].delta and chunk.choices[0].delta.content is not None:
+                    content = chunk.choices[0].delta.content
+                    full_response += content
+                    message_placeholder.markdown(full_response + "▌", unsafe_allow_html=True)
+            
+            # Process any audio triggers in the response
+            processed_response = handle_audio_in_response(full_response)
+            message_placeholder.markdown(processed_response, unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}")
+            full_response = "I'm sorry, I encountered an error. Please try again."
+            message_placeholder.markdown(full_response)
+    
+    # Add assistant response to chat history
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
+    
+    # Reset the flag
+    st.session_state.clicked_suggestion = None
 
 # Get user input
 user_query = st.chat_input("Ask RalphBOT something...")
