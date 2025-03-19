@@ -136,35 +136,114 @@ if "clicked_suggestion" not in st.session_state:
 st.markdown("##### Try asking about:")
 col1, col2, col3 = st.columns(3)
 
-# Create a simple trigger mechanism
-if "button_clicked" not in st.session_state:
-    st.session_state.button_clicked = False
+# Create dynamic suggestion system
+if "used_suggestions" not in st.session_state:
+    st.session_state.used_suggestions = set()
+
+# Define suggestion pools by category
+SUGGESTION_POOLS = {
+    "services": [
+        "What services does Ralph offer?",
+        "Tell me about your Strategy services",
+        "How does your Social service work?",
+        "What does your Studio team do?",
+        "Can you explain your Live services?"
+    ],
+    "company": [
+        "When was Ralph founded?",
+        "How many offices does Ralph have?",
+        "What's Ralph's mission?",
+        "Who is the Managing Director of Ralph NY?",
+        "What's your famous brand color?"
+    ],
+    "cases": [
+        "Tell me about your work on Stranger Things",
+        "What did you do for Squid Game?",
+        "Show me your best case study",
+        "What entertainment brands have you worked with?",
+        "What's your approach to fan engagement?"
+    ],
+    "fun": [
+        "How's the temperature in the office?",
+        "Tell me a joke about the founders",
+        "What's your favorite 90s TV show?",
+        "Share a random internet meme",
+        "What do you think about Bridgerton?"
+    ]
+}
+
+# Function to get fresh suggestions
+def get_fresh_suggestions():
+    suggestions = []
     
-if "button_question" not in st.session_state:
-    st.session_state.button_question = ""
+    # Try to infer what categories might interest the user based on conversation
+    interested_categories = ["services", "company", "cases", "fun"]  # Default starting categories
+    
+    if len(st.session_state.messages) > 0:
+        # Analyze conversation to determine interests
+        conversation_text = " ".join([m["content"] for m in st.session_state.messages])
+        if "service" in conversation_text.lower() or "strategy" in conversation_text.lower():
+            interested_categories = ["services"] + [c for c in interested_categories if c != "services"]
+        if "case" in conversation_text.lower() or "stranger" in conversation_text.lower():
+            interested_categories = ["cases"] + [c for c in interested_categories if c != "cases"]
+        if "found" in conversation_text.lower() or "company" in conversation_text.lower():
+            interested_categories = ["company"] + [c for c in interested_categories if c != "company"]
+    
+    # Get one suggestion from each interested category
+    for category in interested_categories[:3]:  # Limit to 3 categories
+        available = [s for s in SUGGESTION_POOLS[category] if s not in st.session_state.used_suggestions]
+        if not available:  # If all used, reset for this category
+            available = SUGGESTION_POOLS[category]
+            
+        if available:
+            suggestion = available[0]  # Choose first available
+            suggestions.append(suggestion)
+            
+    # If we don't have 3 suggestions yet, fill in from any category
+    all_suggestions = [item for sublist in SUGGESTION_POOLS.values() for item in sublist]
+    while len(suggestions) < 3:
+        available = [s for s in all_suggestions if s not in suggestions and s not in st.session_state.used_suggestions]
+        if not available:
+            available = [s for s in all_suggestions if s not in suggestions]
+        
+        if available:
+            suggestions.append(available[0])
+        else:
+            break  # Safety check
+            
+    return suggestions
+
+# Get three dynamic suggestions
+suggestions = get_fresh_suggestions()
 
 # Define button click handlers
-def click_services():
+def click_button1():
     st.session_state.button_clicked = True
-    st.session_state.button_question = "What services does Ralph offer?"
+    st.session_state.button_question = suggestions[0]
+    st.session_state.used_suggestions.add(suggestions[0])
 
-def click_cases():
+def click_button2():
     st.session_state.button_clicked = True
-    st.session_state.button_question = "Tell me about your work on Stranger Things"
+    st.session_state.button_question = suggestions[1]
+    st.session_state.used_suggestions.add(suggestions[1])
 
-def click_temp():
+def click_button3():
     st.session_state.button_clicked = True
-    st.session_state.button_question = "How's the temperature in the office?"
+    st.session_state.button_question = suggestions[2]
+    st.session_state.used_suggestions.add(suggestions[2])
 
-# Display buttons with their handlers
+# Display buttons with dynamic text
+st.markdown("##### Try asking about:")
+col1, col2, col3 = st.columns(3)
+
 with col1:
-    st.button("Services", on_click=click_services)
+    st.button(suggestions[0].split("?")[0].split(".")[0], on_click=click_button1)
 
 with col2:
-    st.button("Case Studies", on_click=click_cases)
+    st.button(suggestions[1].split("?")[0].split(".")[0], on_click=click_button2)
 
 with col3:
-    st.button("Office Temperature", on_click=click_temp)
+    st.button(suggestions[2].split("?")[0].split(".")[0], on_click=click_button3)
 
 # Process button clicks 
 if st.session_state.button_clicked:
