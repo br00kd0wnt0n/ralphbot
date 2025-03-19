@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from company_knowledge import COMPANY_PROMPT
 
 # This MUST be the first Streamlit command
-st.set_page_config(page_title="RalphBOT NY v1.0", page_icon=":robot_face:")
+st.set_page_config(page_title="v0.2", page_icon=":robot_face:")
 
 # Now we can load other modules and run other code
 from PIL import Image
@@ -132,22 +132,28 @@ if not st.session_state.welcomed:
 if "clicked_suggestion" not in st.session_state:
     st.session_state.clicked_suggestion = None
 
-# Add suggestion chips if no conversation has started yet
-if len(st.session_state.messages) == 0:
-    st.markdown("##### Try asking about:")
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("Services"):
-            st.session_state.clicked_suggestion = "What services does Ralph offer?"
-    
-    with col2:
-        if st.button("Case Studies"):
-            st.session_state.clicked_suggestion = "Tell me about your work on Stranger Things"
-    
-    with col3:
-        if st.button("Office Temperature"):
-            st.session_state.clicked_suggestion = "How's the temperature in the office?"
+# Create more reliable suggestion buttons
+st.markdown("##### Try asking about:")
+col1, col2, col3 = st.columns(3)
+
+# Use unique keys for each button to ensure they work consistently
+with col1:
+    if st.button("Services", key="btn_services"):
+        new_question = "What services does Ralph offer?"
+        st.session_state.messages.append({"role": "user", "content": new_question})
+        st.rerun()
+
+with col2:
+    if st.button("Case Studies", key="btn_cases"):
+        new_question = "Tell me about your work on Stranger Things"
+        st.session_state.messages.append({"role": "user", "content": new_question})
+        st.rerun()
+
+with col3:
+    if st.button("Office Temperature", key="btn_temp"):
+        new_question = "How's the temperature in the office?"
+        st.session_state.messages.append({"role": "user", "content": new_question})
+        st.rerun()
 
 # Process suggestion clicks BEFORE checking for direct user input
 if st.session_state.clicked_suggestion:
