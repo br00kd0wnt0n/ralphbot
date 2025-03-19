@@ -128,6 +128,10 @@ if not st.session_state.welcomed:
     # Mark as welcomed so this only shows once per session
     st.session_state.welcomed = True
 
+# Initialize a flag for suggestion clicks
+if "clicked_suggestion" not in st.session_state:
+    st.session_state.clicked_suggestion = None
+
 # Add suggestion chips if no conversation has started yet
 if len(st.session_state.messages) == 0:
     st.markdown("##### Try asking about:")
@@ -135,20 +139,22 @@ if len(st.session_state.messages) == 0:
     
     with col1:
         if st.button("Services"):
-            # Add user message
-            st.session_state.messages.append({"role": "user", "content": "What services does Ralph offer?"})
-            # Force rerun to show the message
-            st.rerun()
+            st.session_state.clicked_suggestion = "What services does Ralph offer?"
     
     with col2:
         if st.button("Case Studies"):
-            st.session_state.messages.append({"role": "user", "content": "Tell me about your work on Stranger Things"})
-            st.rerun()
+            st.session_state.clicked_suggestion = "Tell me about your work on Stranger Things"
     
     with col3:
         if st.button("Office Temperature"):
-            st.session_state.messages.append({"role": "user", "content": "How's the temperature in the office?"})
-            st.rerun()
+            st.session_state.clicked_suggestion = "How's the temperature in the office?"
+
+# Process suggestion clicks (place this right after the buttons section)
+if st.session_state.clicked_suggestion:
+    question = st.session_state.clicked_suggestion
+    st.session_state.messages.append({"role": "user", "content": question})
+    st.session_state.clicked_suggestion = None  # Reset the flag
+    st.rerun()
 
 # Get user input
 user_query = st.chat_input("Ask RalphBOT something...")
