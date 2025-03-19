@@ -149,10 +149,6 @@ if not st.session_state.welcomed:
 if "clicked_suggestion" not in st.session_state:
     st.session_state.clicked_suggestion = None
 
-# Create more reliable suggestion buttons with session state triggers
-st.markdown("##### Try asking about:")
-col1, col2, col3 = st.columns(3)
-
 # Create dynamic suggestion system
 if "used_suggestions" not in st.session_state:
     st.session_state.used_suggestions = set()
