@@ -135,8 +135,9 @@ if len(st.session_state.messages) == 0:
     
     with col1:
         if st.button("Services"):
-            # Simulate clicking this suggestion
+            # Add user message
             st.session_state.messages.append({"role": "user", "content": "What services does Ralph offer?"})
+            # Force rerun to show the message
             st.rerun()
     
     with col2:
