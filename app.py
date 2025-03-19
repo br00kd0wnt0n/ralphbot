@@ -91,7 +91,7 @@ with st.sidebar:
     if st.button("Reset Chat"):
         st.session_state.messages = []
         st.session_state.welcomed = False
-        st.experimental_rerun()
+        st.rerun()
 
 # Initialize session state for chat history and welcome message
 if "messages" not in st.session_state:
@@ -137,17 +137,17 @@ if len(st.session_state.messages) == 0:
         if st.button("Services"):
             # Simulate clicking this suggestion
             st.session_state.messages.append({"role": "user", "content": "What services does Ralph offer?"})
-            st.experimental_rerun()
+            st.rerun()
     
     with col2:
         if st.button("Case Studies"):
             st.session_state.messages.append({"role": "user", "content": "Tell me about your work on Stranger Things"})
-            st.experimental_rerun()
+            st.rerun()
     
     with col3:
         if st.button("Office Temperature"):
             st.session_state.messages.append({"role": "user", "content": "How's the temperature in the office?"})
-            st.experimental_rerun()
+            st.rerun()
 
 # Get user input
 user_query = st.chat_input("Ask RalphBOT something...")
