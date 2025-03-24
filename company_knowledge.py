@@ -16,11 +16,13 @@ COMPANY BACKGROUND:
 - Founded: 2005 by Chris Hassell and Iain Barrington-Light 
 - Offices: London (est. 2005, New York (est. 2009), LA (est. 2017), Tokyo (est. 2020)
 - Who we are: The creative agency that delivers award-winning campaigns with a personal touch.
+- Trivia: Ralph started in 2005 in London focussing on web design and development producing campaign websites and Flash games for clients such as Nickelodeon and the Disney Channel. The team included Nicola and Dany who are still with us today in our London office. Gregor and Stack joined us two years later to stand up our first Creative team. Later that same year we released a personalised prank video for Dexter season 1 which went viral and resulted in a lot of work coming from the US. We created lots of innovative video and story experiences for Breaking Bad, The Vampire Diaries, Fringe along with many others working with showrunners and writers to expand their worlds online. We also grabbed a BAFTA in 2009 for some UK Channel 4 work with Charlie Brooker.
 - Mission: We make stuff people love and share. 
 - Core value 1: Growing passionate communities by matching curious creatives with adventurous clients. 
 - Core value 2: We understand what audiences want because we’re fans too. 
 - Core value 3: Building rich brand worlds for fans to experience, explore, share, feel and belong.
 - Core value 4: Always driven by emotional connection.
+- Watch our case video here: https://ralphandco.com/en/#case-studies
 
 SERVICES:
 - Service 1: Strategy - Comprehensive fan and audience insights, brand positioning, campaign planning, and platform strategy to maximize impact and engagement.
@@ -39,6 +41,9 @@ FUTURE AMBITION:
 - Ralph is evolving from a tactical execution vendor into a strategic creative partner, leveraging our deep understanding of fans, communities, and IP to drive unique fan engagement experiences. Our vision is to achieve category leadership through a strategy-first approach, proprietary methodologies, expanded creative offerings, and innovation leadership. We're embracing AI capabilities to enhance strategic insights, create dynamic conversational experiences, leverage community growth forecasting, and scale optimized content production. By combining our cross-platform expertise and entertainment industry insight with innovative AI solutions, we're positioned to meet the evolving needs of clients seeking strategic partners in an increasingly complex fan engagement landscape. Our mission is to become true value partners who don't just execute, but guide clients to uncover better opportunities and push the conceptual envelope in fan engagement.
 
 FAQ:
+Q: Who is Ralph? 
+A: Who is Ralph, the mysterious individual with no surname? Ralph Wiggum, there you go… we’re named after the lovely kid from the Simpsons. Iain suggested the name as we were looking for a friendly, approachable, joyous name and whilst everyone knows the name Ralph, it’s still relatively rare to meet one. It’s almost impossible to find an evil one.
+
 Q: Who is the Managing Director of Ralph NY?
 A: Gareth Jones
 
@@ -52,7 +57,7 @@ Q: Who is the Managing Director of Ralph Tokyo?
 A: Yuki Koizumi
 
 Q: What is the hex code of Ralph’s famous pink color? 
-A: E1562
+A: EB008B
 
 Q: What is the Ralph magazine?
 A: Yes, Ralph has a print magazine! Currently on Issue #3.“What will make the new issue of Ralph stand out on the newsstands?” We wondered. Putting a guy wearing a bag on his face on the cover of course! The brilliant, award-winning, best-selling podcaster/writer/multi-disciplinary artist Blindboy Boatclub questions reality itself for our cover feature. The rest of the magazine is packed: comedy editor Alex Haddow catches up with fellow stand up Tatty Macleod, Little White Lies editor David Jenkins imagines an HR job interview with iconic Japanese auteur Takeshi Kitano about his incredible CV, we go to pop sensations Say Now’s house for a cuppa; Tank Girl Co-creator Alan Martin teaches us how to write a cult comic and absolutely loads more. Get it now! More information at https://ralphmagazine.com/
