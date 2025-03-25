@@ -418,11 +418,8 @@ if user_query:
         full_response = ""
         
         try:
-            # Measure response time
-            start_time = time.time()
-            
-            # Use the appropriate API format
-            response = client.chat.completions.create(
+            # Use the older API format which is more compatible
+            response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=api_messages,
                 stream=True
@@ -430,38 +427,18 @@ if user_query:
             
             # Stream the response
             for chunk in response:
-                if chunk.choices and chunk.choices[0].delta.content is not None:
+                if 'content' in chunk.choices[0].delta and chunk.choices[0].delta.content is not None:
                     content = chunk.choices[0].delta.content
                     full_response += content
                     message_placeholder.markdown(full_response + "▌", unsafe_allow_html=True)
             
-            end_time = time.time()
-            response_time_ms = int((end_time - start_time) * 1000)
-            
             # Process any audio triggers in the response
-            message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            
-            # Log the interaction
-            session_id = st.session_state.get("session_id", str(uuid.uuid4()))
-            if "session_id" not in st.session_state:
-                st.session_state.session_id = session_id
-                
-            metadata = {
-                "response_time_ms": response_time_ms,
-                "page_url": st.experimental_get_query_params().get("page", ["home"])[0],
-                "session_length": len(st.session_state.messages),
-                "platform": "web"
-            }
-            
-            log_interaction(
-                user_id=session_id, 
-                query=user_query, 
-                response=full_response, 
-                bot_type="streamlit",
-                metadata=metadata
-            )
-            
+            processed_response = handle_audio_in_response(full_response)
+            message_placeholder.markdown(processed_response, unsafe_allow_html=True)
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
             full_response = "I'm sorry, I encountered an error. Please try again."
             message_placeholder.markdown(full_response)
+    
+    # Add assistant response to chat history
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
