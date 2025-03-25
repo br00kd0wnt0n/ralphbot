@@ -24,6 +24,30 @@ if "button_question" not in st.session_state:
 if "used_suggestions" not in st.session_state:
     st.session_state.used_suggestions = set()
 
+# After initializing session state
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Add heartbeat function here
+def update_heartbeat(bot_type):
+    """Update bot heartbeat status in MongoDB"""
+    try:
+        db.bot_status.update_one(
+            {"bot_type": bot_type},
+            {
+                "$set": {
+                    "last_heartbeat": datetime.datetime.now(),
+                    "status": "online"
+                }
+            },
+            upsert=True
+        )
+    except Exception as e:
+        print(f"Error updating heartbeat: {e}")
+
+# Call on startup
+update_heartbeat("streamlit")
+
 # Now we can load other modules and run other code
 from PIL import Image
 
