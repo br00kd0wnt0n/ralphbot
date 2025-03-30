@@ -138,11 +138,6 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"], unsafe_allow_html=True)
 
-# Display chat history
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"], unsafe_allow_html=True)
-
 # Add suggestion buttons if no conversation has started yet
 if len(st.session_state.messages) == 0:
     st.markdown("##### Try asking about:")
