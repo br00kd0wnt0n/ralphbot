@@ -7,6 +7,55 @@ from company_knowledge import COMPANY_PROMPT
 # This MUST be the first Streamlit command
 st.set_page_config(page_title="v0.2", page_icon=":robot_face:")
 
+import datetime
+import time
+import uuid
+from pymongo import MongoClient
+
+# Add MongoDB connection near your imports
+mongo_uri = os.getenv("MONGO_URI", "mongodb+srv://your-connection-string")
+db_client = MongoClient(mongo_uri)
+db = db_client.ralphbot_analytics
+
+# Add logging function after initializing session state
+def log_interaction(user_id, query, response, bot_type, metadata=None):
+    """Log bot interaction to MongoDB"""
+    try:
+        interaction = {
+            "timestamp": datetime.datetime.now(),
+            "interaction_id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "query": query,
+            "response": response,
+            "bot_type": bot_type,
+            "response_time_ms": metadata.get("response_time_ms", 0),
+            "token_usage": metadata.get("token_usage", 0),
+            "metadata": metadata or {}
+        }
+        db.interactions.insert_one(interaction)
+    except Exception as e:
+        st.error(f"Error logging interaction: {e}")
+
+# Add heartbeat function
+def update_heartbeat(bot_type):
+    """Update bot heartbeat status in MongoDB"""
+    try:
+        db.bot_status.update_one(
+            {"bot_type": bot_type},
+            {
+                "$set": {
+                    "last_heartbeat": datetime.datetime.now(),
+                    "status": "online"
+                }
+            },
+            upsert=True
+        )
+    except Exception as e:
+        st.error(f"Error updating heartbeat: {e}")
+
+# Call heartbeat on startup
+update_heartbeat("streamlit")
+
 # Initialize session state for chat history and welcome message
 if "messages" not in st.session_state:
     st.session_state.messages = []
