@@ -12,6 +12,72 @@ import time
 import uuid
 from pymongo import MongoClient
 
+# Add near imports
+import datetime
+import time
+import uuid
+from pymongo import MongoClient
+
+# MongoDB connection with proper error handling
+mongo_uri = os.getenv("MONGO_URI", "mongodb://placeholder")
+try:
+    db_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)  # 5 second timeout
+    # Test the connection
+    db_client.admin.command('ping')
+    db = db_client.ralphbot_analytics
+    mongodb_available = True
+    print("MongoDB connection successful")
+except Exception as e:
+    print(f"MongoDB connection failed: {e}")
+    mongodb_available = False
+    db = None
+
+# Modified logging function with availability check
+def log_interaction(user_id, query, response, bot_type, metadata=None):
+    """Log bot interaction to MongoDB if available"""
+    if not mongodb_available:
+        return
+        
+    try:
+        interaction = {
+            "timestamp": datetime.datetime.now(),
+            "interaction_id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "query": query,
+            "response": response,
+            "bot_type": bot_type,
+            "response_time_ms": metadata.get("response_time_ms", 0),
+            "token_usage": metadata.get("token_usage", 0),
+            "metadata": metadata or {}
+        }
+        db.interactions.insert_one(interaction)
+    except Exception as e:
+        print(f"Error logging interaction: {e}")
+
+# Modified heartbeat function with availability check
+def update_heartbeat(bot_type):
+    """Update bot heartbeat status in MongoDB if available"""
+    if not mongodb_available:
+        return
+        
+    try:
+        db.bot_status.update_one(
+            {"bot_type": bot_type},
+            {
+                "$set": {
+                    "last_heartbeat": datetime.datetime.now(),
+                    "status": "online"
+                }
+            },
+            upsert=True
+        )
+    except Exception as e:
+        print(f"Error updating heartbeat: {e}")
+
+# Call heartbeat only if MongoDB is available
+if mongodb_available:
+    update_heartbeat("streamlit")
+
 # Add MongoDB connection near your imports
 # Modify this line in your app.py
 mongo_uri = os.getenv("MONGO_URI", "mongodb://placeholder")
