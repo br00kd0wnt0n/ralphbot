@@ -11,6 +11,49 @@ from company_knowledge import COMPANY_PROMPT
 # Load environment variables
 load_dotenv()
 
+# Add this right after loading environment variables
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    st.error("OpenAI API key not found in environment variables.")
+    
+    # Check if it's in Streamlit secrets
+    if "openai" in st.secrets and "OPENAI_API_KEY" in st.secrets["openai"]:
+        api_key = st.secrets["openai"]["OPENAI_API_KEY"]
+        st.success("Found API key in st.secrets['openai']")
+    elif "OPENAI_API_KEY" in st.secrets:
+        api_key = st.secrets["OPENAI_API_KEY"]
+        st.success("Found API key in st.secrets directly")
+    else:
+        st.error("API key not found in Streamlit secrets either")
+        
+if api_key:
+    # Show the first 4 and last 4 characters only
+    safe_key = api_key[:4] + "..." + api_key[-4:] if len(api_key) > 8 else "Key too short"
+    st.info(f"Using API key: {safe_key}")
+else:
+    st.error("No API key available. Bot functionality will be limited.")
+    st.stop()
+
+# Try both new and old OpenAI API styles
+api_key = os.getenv("OPENAI_API_KEY", "")
+if not api_key and "OPENAI_API_KEY" in st.secrets:
+    api_key = st.secrets["OPENAI_API_KEY"]
+elif not api_key and "openai" in st.secrets and "OPENAI_API_KEY" in st.secrets["openai"]:
+    api_key = st.secrets["openai"]["OPENAI_API_KEY"]
+
+try:
+    # Try new style
+    from openai import OpenAI
+    client = OpenAI(api_key=api_key)
+    use_new_style = True
+    st.success("Using new OpenAI API style")
+except Exception as e:
+    # Fall back to old style
+    import openai
+    openai.api_key = api_key
+    use_new_style = False
+    st.success("Using legacy OpenAI API style")
+
 # Set page title and icon
 st.set_page_config(page_title="RalphBOT NY v1.0", page_icon=":robot_face:")
 
@@ -129,6 +172,39 @@ if user_query:
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
         full_response = ""
+
+        try:
+    # Measure response time
+    start_time = time.time()
+    
+    if use_new_style:
+        # New style API call
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=api_messages,
+            stream=True
+        )
+        
+        # Stream the response
+        for chunk in response:
+            if chunk.choices and chunk.choices[0].delta.content is not None:
+                content = chunk.choices[0].delta.content
+                full_response += content
+                message_placeholder.markdown(full_response + "▌", unsafe_allow_html=True)
+    else:
+        # Old style API call
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=api_messages,
+            stream=True
+        )
+        
+        # Stream the response (old style)
+        for chunk in response:
+            if 'content' in chunk.choices[0].delta and chunk.choices[0].delta.content is not None:
+                content = chunk.choices[0].delta.content
+                full_response += content
+                message_placeholder.markdown(full_response + "▌", unsafe_allow_html=True)
         
         try:
             # Measure response time
