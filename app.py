@@ -124,63 +124,64 @@ if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
 # Initialize state variables if they don't exist
-if "init" not in st.session_state:
-    st.session_state.init = True
+if "clicked_question" not in st.session_state:
     st.session_state.clicked_question = None
+
+# Function to set clicked question
+def set_question(question):
+    st.session_state.clicked_question = question
 
 # Display chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"], unsafe_allow_html=True)
 
-# Get user input or process suggestion
-if st.session_state.clicked_question:
-    # Process clicked suggestion
-    user_query = st.session_state.clicked_question
-    st.session_state.clicked_question = None  # Clear for next interaction
-else:
-    # Only show suggestion buttons when no conversation history
-    if len(st.session_state.messages) == 0:
-        st.markdown("##### Try asking about:")
-        
-        # Custom CSS for equal width buttons
-        st.markdown("""
-        <style>
-        div.stButton > button {
-            width: 100%;
-            background-color: #E90080;
-            color: white;
-        }
-        div.stButton > button:hover {
-            background-color: #C50070;
-            color: white;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-        
-        # Define button click handlers that modify session state
-        def set_question(question):
-            st.session_state.clicked_question = question
-        
-        # Create columns and buttons
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.button("Services", key="btn_services", 
-                     on_click=set_question, 
-                     args=("What services does Ralph offer?",))
-        with col2:
-            st.button("Company History", key="btn_history", 
-                     on_click=set_question, 
-                     args=("Tell me about Ralph's history",))
-        with col3:
-            st.button("Offices", key="btn_offices", 
-                     on_click=set_question, 
-                     args=("Where are Ralph's offices located?",))
+# Create suggestion buttons when no conversation yet
+if len(st.session_state.messages) == 0:
+    st.markdown("##### Try asking about:")
     
-    # Always have the chat input (regardless of history length)
-    user_query = st.chat_input("Ask RalphBOT something...")
+    # Custom CSS for equal width buttons
+    st.markdown("""
+    <style>
+    div.stButton > button {
+        width: 100%;
+        background-color: #E90080;
+        color: white;
+    }
+    div.stButton > button:hover {
+        background-color: #C50070;
+        color: white;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Create columns and buttons
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.button("Services", key="btn_services", 
+                 on_click=set_question, 
+                 args=("What services does Ralph offer?",))
+    with col2:
+        st.button("Company History", key="btn_history", 
+                 on_click=set_question, 
+                 args=("Tell me about Ralph's history",))
+    with col3:
+        st.button("Offices", key="btn_offices", 
+                 on_click=set_question, 
+                 args=("Where are Ralph's offices located?",))
 
-# Process user input or clicked suggestion
+# Get user input
+user_input = st.chat_input("Ask RalphBOT something...")
+
+# Determine the actual query (from button or direct input)
+user_query = None
+if st.session_state.clicked_question:
+    user_query = st.session_state.clicked_question
+    st.session_state.clicked_question = None  # Clear for next time
+elif user_input:
+    user_query = user_input
+
+# Process query if we have one
 if user_query:
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": user_query})
@@ -250,6 +251,9 @@ if user_query:
     
     # Add assistant response to chat history
     st.session_state.messages.append({"role": "assistant", "content": full_response})
+    
+    # Re-run the app to show the updated conversation and input field
+    st.rerun()
 
 # Add a sidebar with additional information
 with st.sidebar:
