@@ -138,6 +138,34 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"], unsafe_allow_html=True)
 
+# Display chat history
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"], unsafe_allow_html=True)
+
+# Add suggestion buttons if no conversation has started yet
+if len(st.session_state.messages) == 0:
+    st.markdown("##### Try asking about:")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("Services"):
+            st.session_state.messages.append({"role": "user", "content": "What services does Ralph offer?"})
+            st.rerun()
+    
+    with col2:
+        if st.button("Company History"):
+            st.session_state.messages.append({"role": "user", "content": "Tell me about Ralph's history"})
+            st.rerun()
+    
+    with col3:
+        if st.button("Offices"):
+            st.session_state.messages.append({"role": "user", "content": "Where are Ralph's offices located?"})
+            st.rerun()
+
+# User input
+user_query = st.chat_input("Ask RalphBOT something...")
+
 # User input
 user_query = st.chat_input("Ask RalphBOT something...")
 
