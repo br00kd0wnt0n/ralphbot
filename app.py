@@ -36,14 +36,9 @@ else:
     st.error("No API key available. Bot functionality will be limited.")
     st.stop()
 
-# Initialize OpenAI
-try:
-    from openai import OpenAI
-    client = OpenAI(api_key=api_key)
-    st.success("Using OpenAI API")
-except Exception as e:
-    st.error(f"Error initializing OpenAI: {str(e)}")
-    st.stop()
+# Initialize OpenAI with old style API
+import openai
+openai.api_key = api_key
 
 # MongoDB connection handling
 mongo_uri = os.getenv("MONGO_URI", "mongodb://placeholder")
@@ -212,16 +207,16 @@ if user_query:
             # Measure response time
             start_time = time.time()
             
-            # New style API call
-            response = client.chat.completions.create(
+            # Old style API call
+            response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=api_messages,
                 stream=True
             )
             
-            # Stream the response
+            # Stream the response (old style)
             for chunk in response:
-                if chunk.choices and chunk.choices[0].delta.content is not None:
+                if 'content' in chunk.choices[0].delta and chunk.choices[0].delta.content is not None:
                     content = chunk.choices[0].delta.content
                     full_response += content
                     message_placeholder.markdown(full_response + "▌", unsafe_allow_html=True)
