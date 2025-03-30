@@ -145,6 +145,38 @@ if not api_key:
 
 openai.api_key = api_key
 
+# Inside your bot response code where you call OpenAI
+start_time = time.time()
+
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=api_messages,
+    stream=True
+)
+
+# After generating the full response:
+end_time = time.time()
+response_time_ms = int((end_time - start_time) * 1000)
+
+# Log the interaction
+session_id = st.session_state.get("session_id", str(uuid.uuid4()))
+if "session_id" not in st.session_state:
+    st.session_state.session_id = session_id
+    
+metadata = {
+    "response_time_ms": response_time_ms,
+    "session_length": len(st.session_state.messages),
+    "platform": "web"
+}
+
+log_interaction(
+    user_id=session_id, 
+    query=user_query, 
+    response=full_response, 
+    bot_type="streamlit",
+    metadata=metadata
+)
+
 # Function to handle audio in responses
 def handle_audio_in_response(response):
     """Check response for audio trigger tags and display audio if found"""
