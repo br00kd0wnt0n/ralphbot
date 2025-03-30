@@ -261,3 +261,64 @@ with st.sidebar:
     if st.button("Reset Chat"):
         st.session_state.messages = []
         st.rerun()
+
+# Add suggestion buttons if no conversation has started yet
+if len(st.session_state.messages) == 0:
+    # Initialize clicked_question if it doesn't exist
+    if "clicked_question" not in st.session_state:
+        st.session_state.clicked_question = None
+    
+    st.markdown("##### Try asking about:")
+    
+    # Custom CSS for equal width buttons
+    st.markdown("""
+    <style>
+    div.stButton > button {
+        width: 100%;
+        background-color: #E90080;
+        color: white;
+    }
+    div.stButton > button:hover {
+        background-color: #C50070;
+        color: white;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Create three equal columns
+    col1, col2, col3 = st.columns(3)
+    
+    # Define button click handlers
+    def click_services():
+        st.session_state.clicked_question = "What services does Ralph offer?"
+    
+    def click_history():
+        st.session_state.clicked_question = "Tell me about Ralph's history"
+    
+    def click_offices():
+        st.session_state.clicked_question = "Where are Ralph's offices located?"
+    
+    # Add buttons with click handlers
+    with col1:
+        st.button("Services", key="btn_services", on_click=click_services)
+    
+    with col2:
+        st.button("Company History", key="btn_history", on_click=click_history)
+    
+    with col3:
+        st.button("Offices", key="btn_offices", on_click=click_offices)
+
+# Handle clicked suggestion
+if st.session_state.get("clicked_question"):
+    user_query = st.session_state.clicked_question
+    # Clear for next time
+    st.session_state.clicked_question = None
+    # Add to message history and display
+    st.session_state.messages.append({"role": "user", "content": user_query})
+    # Display message
+    with st.chat_message("user"):
+        st.markdown(user_query)
+    # Rerun not needed here as we'll continue processing below
+else:
+    # Normal user input
+    user_query = st.chat_input("Ask RalphBOT something...")
