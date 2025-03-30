@@ -13,9 +13,27 @@ import uuid
 from pymongo import MongoClient
 
 # Add MongoDB connection near your imports
-mongo_uri = os.getenv("MONGO_URI", "mongodb+srv://your-connection-string")
-db_client = MongoClient(mongo_uri)
-db = db_client.ralphbot_analytics
+# Modify this line in your app.py
+mongo_uri = os.getenv("MONGO_URI", "mongodb://placeholder")
+
+# And wrap the client initialization in a try/except block
+try:
+    db_client = MongoClient(mongo_uri)
+    db = db_client.ralphbot_analytics
+except Exception as e:
+    # Fallback to not using MongoDB
+    print(f"MongoDB connection error: {e}")
+    db_client = None
+    db = None
+
+# Then wrap all MongoDB operations in condition checks
+def log_interaction(user_id, query, response, bot_type, metadata=None):
+    if db is not None:
+        try:
+            # Your existing logging code
+            pass
+        except Exception as e:
+            print(f"Error logging interaction: {e}")
 
 # Add logging function after initializing session state
 def log_interaction(user_id, query, response, bot_type, metadata=None):
