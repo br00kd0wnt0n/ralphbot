@@ -3,13 +3,15 @@ import os
 import datetime
 import time
 import uuid
-from openai import OpenAI
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from company_knowledge import COMPANY_PROMPT
 
 # Load environment variables
 load_dotenv()
+
+# Set page title and icon - must be the first Streamlit command
+st.set_page_config(page_title="RalphBOT NY v1.0", page_icon=":robot_face:")
 
 # Add this right after loading environment variables
 api_key = os.getenv("OPENAI_API_KEY")
@@ -35,12 +37,6 @@ else:
     st.stop()
 
 # Try both new and old OpenAI API styles
-api_key = os.getenv("OPENAI_API_KEY", "")
-if not api_key and "OPENAI_API_KEY" in st.secrets:
-    api_key = st.secrets["OPENAI_API_KEY"]
-elif not api_key and "openai" in st.secrets and "OPENAI_API_KEY" in st.secrets["openai"]:
-    api_key = st.secrets["openai"]["OPENAI_API_KEY"]
-
 try:
     # Try new style
     from openai import OpenAI
@@ -53,9 +49,6 @@ except Exception as e:
     openai.api_key = api_key
     use_new_style = False
     st.success("Using legacy OpenAI API style")
-
-# Set page title and icon
-st.set_page_config(page_title="RalphBOT NY v1.0", page_icon=":robot_face:")
 
 # MongoDB connection handling
 mongo_uri = os.getenv("MONGO_URI", "mongodb://placeholder")
@@ -132,9 +125,6 @@ st.markdown("""
 
 st.title("RalphBOT NY v1.0")
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -174,55 +164,37 @@ if user_query:
         full_response = ""
 
         try:
-    # Measure response time
-    start_time = time.time()
-    
-    if use_new_style:
-        # New style API call
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=api_messages,
-            stream=True
-        )
-        
-        # Stream the response
-        for chunk in response:
-            if chunk.choices and chunk.choices[0].delta.content is not None:
-                content = chunk.choices[0].delta.content
-                full_response += content
-                message_placeholder.markdown(full_response + "▌", unsafe_allow_html=True)
-    else:
-        # Old style API call
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=api_messages,
-            stream=True
-        )
-        
-        # Stream the response (old style)
-        for chunk in response:
-            if 'content' in chunk.choices[0].delta and chunk.choices[0].delta.content is not None:
-                content = chunk.choices[0].delta.content
-                full_response += content
-                message_placeholder.markdown(full_response + "▌", unsafe_allow_html=True)
-        
-        try:
             # Measure response time
             start_time = time.time()
             
-            # Use the appropriate API format
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=api_messages,
-                stream=True
-            )
-            
-            # Stream the response
-            for chunk in response:
-                if chunk.choices and chunk.choices[0].delta.content is not None:
-                    content = chunk.choices[0].delta.content
-                    full_response += content
-                    message_placeholder.markdown(full_response + "▌", unsafe_allow_html=True)
+            if use_new_style:
+                # New style API call
+                response = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=api_messages,
+                    stream=True
+                )
+                
+                # Stream the response
+                for chunk in response:
+                    if chunk.choices and chunk.choices[0].delta.content is not None:
+                        content = chunk.choices[0].delta.content
+                        full_response += content
+                        message_placeholder.markdown(full_response + "▌", unsafe_allow_html=True)
+            else:
+                # Old style API call
+                response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=api_messages,
+                    stream=True
+                )
+                
+                # Stream the response (old style)
+                for chunk in response:
+                    if 'content' in chunk.choices[0].delta and chunk.choices[0].delta.content is not None:
+                        content = chunk.choices[0].delta.content
+                        full_response += content
+                        message_placeholder.markdown(full_response + "▌", unsafe_allow_html=True)
             
             # Calculate response time
             end_time = time.time()
