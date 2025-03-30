@@ -144,25 +144,27 @@ if len(st.session_state.messages) == 0:
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("Services"):
-            st.session_state.messages.append({"role": "user", "content": "What services does Ralph offer?"})
+        if st.button("Services", key="btn_services"):
+            st.session_state.clicked_question = "What services does Ralph offer?"
             st.rerun()
     
     with col2:
-        if st.button("Company History"):
-            st.session_state.messages.append({"role": "user", "content": "Tell me about Ralph's history"})
+        if st.button("Company History", key="btn_history"):
+            st.session_state.clicked_question = "Tell me about Ralph's history"
             st.rerun()
     
     with col3:
-        if st.button("Offices"):
-            st.session_state.messages.append({"role": "user", "content": "Where are Ralph's offices located?"})
+        if st.button("Offices", key="btn_offices"):
+            st.session_state.clicked_question = "Where are Ralph's offices located?"
             st.rerun()
 
-# User input
-user_query = st.chat_input("Ask RalphBOT something...")
-
-# User input
-user_query = st.chat_input("Ask RalphBOT something...")
+# Handle clicked suggestions before checking direct input
+if "clicked_question" in st.session_state and st.session_state.clicked_question:
+    user_query = st.session_state.clicked_question
+    st.session_state.clicked_question = None
+else:
+    # User input - only ONE chat_input in the whole app
+    user_query = st.chat_input("Ask RalphBOT something...")
 
 if user_query:
     # Add user message to chat history
