@@ -41,12 +41,12 @@ import openai
 openai.api_key = api_key
 
 # MongoDB connection handling
-mongo_uri = os.getenv("MONGO_URI", "mongodb://placeholder")
+mongo_uri = os.getenv("MONGO_URI", "mongodb+srv://br00kd0wnt0n:XHZo54P7bqrVUIzj@ralphbot.nsyijw5.mongodb.net/?retryWrites=true&w=majority&appName=RalphBot")
 mongodb_available = False
 db = None
 
 # Only attempt connection if we have a real-looking MongoDB URI
-if mongo_uri != "mongodb://placeholder" and not mongo_uri.startswith("mongodb://placeholder"):
+if mongo_uri != "mongodb://placeholder" and not mongo_uri.startswith("mongodb+srv://br00kd0wnt0n:XHZo54P7bqrVUIzj@ralphbot.nsyijw5.mongodb.net/?retryWrites=true&w=majority&appName=RalphBot"):
     try:
         db_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
         # Test the connection
