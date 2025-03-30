@@ -18,6 +18,26 @@ import time
 import uuid
 from pymongo import MongoClient
 
+# MongoDB connection handling
+mongo_uri = os.getenv("MONGO_URI", "mongodb://placeholder")
+mongodb_available = False
+db = None
+
+# Only attempt connection if we have a real-looking MongoDB URI
+if "mongodb+srv://" in mongo_uri or mongo_uri != "mongodb://placeholder":
+    try:
+        db_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+        # Test the connection
+        db_client.admin.command('ping')
+        db = db_client.ralphbot_analytics
+        mongodb_available = True
+        print("MongoDB connection successful")
+    except Exception as e:
+        print(f"MongoDB connection failed: {e}")
+        mongodb_available = False
+else:
+    print("MongoDB URI not provided, analytics features disabled")
+
 # MongoDB connection with proper error handling
 mongo_uri = os.getenv("MONGO_URI", "mongodb://placeholder")
 try:
