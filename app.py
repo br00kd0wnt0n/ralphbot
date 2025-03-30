@@ -7,13 +7,13 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 from company_knowledge import COMPANY_PROMPT
 
+# This MUST be the first Streamlit command
+st.set_page_config(page_title="RalphBOT NY v1.0", page_icon=":robot_face:")
+
 # Load environment variables
 load_dotenv()
 
-# Set page title and icon - must be the first Streamlit command
-st.set_page_config(page_title="RalphBOT NY v1.0", page_icon=":robot_face:")
-
-# Add this right after loading environment variables
+# Check for OpenAI API key
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
     st.error("OpenAI API key not found in environment variables.")
@@ -36,19 +36,14 @@ else:
     st.error("No API key available. Bot functionality will be limited.")
     st.stop()
 
-# Try both new and old OpenAI API styles
+# Initialize OpenAI
 try:
-    # Try new style
     from openai import OpenAI
     client = OpenAI(api_key=api_key)
-    use_new_style = True
-    st.success("Using new OpenAI API style")
+    st.success("Using OpenAI API")
 except Exception as e:
-    # Fall back to old style
-    import openai
-    openai.api_key = api_key
-    use_new_style = False
-    st.success("Using legacy OpenAI API style")
+    st.error(f"Error initializing OpenAI: {str(e)}")
+    st.stop()
 
 # MongoDB connection handling
 mongo_uri = os.getenv("MONGO_URI", "mongodb://placeholder")
@@ -133,39 +128,64 @@ if "messages" not in st.session_state:
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
+# Initialize state variables if they don't exist
+if "init" not in st.session_state:
+    st.session_state.init = True
+    st.session_state.clicked_question = None
+
 # Display chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"], unsafe_allow_html=True)
 
-# Add suggestion buttons if no conversation has started yet
-if len(st.session_state.messages) == 0:
-    st.markdown("##### Try asking about:")
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("Services", key="btn_services"):
-            st.session_state.clicked_question = "What services does Ralph offer?"
-            st.rerun()
-    
-    with col2:
-        if st.button("Company History", key="btn_history"):
-            st.session_state.clicked_question = "Tell me about Ralph's history"
-            st.rerun()
-    
-    with col3:
-        if st.button("Offices", key="btn_offices"):
-            st.session_state.clicked_question = "Where are Ralph's offices located?"
-            st.rerun()
-
-# Handle clicked suggestions before checking direct input
-if "clicked_question" in st.session_state and st.session_state.clicked_question:
+# Get user input or process suggestion
+if st.session_state.clicked_question:
+    # Process clicked suggestion
     user_query = st.session_state.clicked_question
-    st.session_state.clicked_question = None
+    st.session_state.clicked_question = None  # Clear for next interaction
 else:
-    # User input - only ONE chat_input in the whole app
+    # Only show suggestion buttons when no conversation history
+    if len(st.session_state.messages) == 0:
+        st.markdown("##### Try asking about:")
+        
+        # Custom CSS for equal width buttons
+        st.markdown("""
+        <style>
+        div.stButton > button {
+            width: 100%;
+            background-color: #E90080;
+            color: white;
+        }
+        div.stButton > button:hover {
+            background-color: #C50070;
+            color: white;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Define button click handlers that modify session state
+        def set_question(question):
+            st.session_state.clicked_question = question
+        
+        # Create columns and buttons
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.button("Services", key="btn_services", 
+                     on_click=set_question, 
+                     args=("What services does Ralph offer?",))
+        with col2:
+            st.button("Company History", key="btn_history", 
+                     on_click=set_question, 
+                     args=("Tell me about Ralph's history",))
+        with col3:
+            st.button("Offices", key="btn_offices", 
+                     on_click=set_question, 
+                     args=("Where are Ralph's offices located?",))
+    
+    # Always have the chat input (regardless of history length)
     user_query = st.chat_input("Ask RalphBOT something...")
 
+# Process user input or clicked suggestion
 if user_query:
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": user_query})
@@ -192,34 +212,19 @@ if user_query:
             # Measure response time
             start_time = time.time()
             
-            if use_new_style:
-                # New style API call
-                response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=api_messages,
-                    stream=True
-                )
-                
-                # Stream the response
-                for chunk in response:
-                    if chunk.choices and chunk.choices[0].delta.content is not None:
-                        content = chunk.choices[0].delta.content
-                        full_response += content
-                        message_placeholder.markdown(full_response + "▌", unsafe_allow_html=True)
-            else:
-                # Old style API call
-                response = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=api_messages,
-                    stream=True
-                )
-                
-                # Stream the response (old style)
-                for chunk in response:
-                    if 'content' in chunk.choices[0].delta and chunk.choices[0].delta.content is not None:
-                        content = chunk.choices[0].delta.content
-                        full_response += content
-                        message_placeholder.markdown(full_response + "▌", unsafe_allow_html=True)
+            # New style API call
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=api_messages,
+                stream=True
+            )
+            
+            # Stream the response
+            for chunk in response:
+                if chunk.choices and chunk.choices[0].delta.content is not None:
+                    content = chunk.choices[0].delta.content
+                    full_response += content
+                    message_placeholder.markdown(full_response + "▌", unsafe_allow_html=True)
             
             # Calculate response time
             end_time = time.time()
@@ -261,64 +266,3 @@ with st.sidebar:
     if st.button("Reset Chat"):
         st.session_state.messages = []
         st.rerun()
-
-# Add suggestion buttons if no conversation has started yet
-if len(st.session_state.messages) == 0:
-    # Initialize clicked_question if it doesn't exist
-    if "clicked_question" not in st.session_state:
-        st.session_state.clicked_question = None
-    
-    st.markdown("##### Try asking about:")
-    
-    # Custom CSS for equal width buttons
-    st.markdown("""
-    <style>
-    div.stButton > button {
-        width: 100%;
-        background-color: #E90080;
-        color: white;
-    }
-    div.stButton > button:hover {
-        background-color: #C50070;
-        color: white;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Create three equal columns
-    col1, col2, col3 = st.columns(3)
-    
-    # Define button click handlers
-    def click_services():
-        st.session_state.clicked_question = "What services does Ralph offer?"
-    
-    def click_history():
-        st.session_state.clicked_question = "Tell me about Ralph's history"
-    
-    def click_offices():
-        st.session_state.clicked_question = "Where are Ralph's offices located?"
-    
-    # Add buttons with click handlers
-    with col1:
-        st.button("Services", key="btn_services", on_click=click_services)
-    
-    with col2:
-        st.button("Company History", key="btn_history", on_click=click_history)
-    
-    with col3:
-        st.button("Offices", key="btn_offices", on_click=click_offices)
-
-# Handle clicked suggestion
-if st.session_state.get("clicked_question"):
-    user_query = st.session_state.clicked_question
-    # Clear for next time
-    st.session_state.clicked_question = None
-    # Add to message history and display
-    st.session_state.messages.append({"role": "user", "content": user_query})
-    # Display message
-    with st.chat_message("user"):
-        st.markdown(user_query)
-    # Rerun not needed here as we'll continue processing below
-else:
-    # Normal user input
-    user_query = st.chat_input("Ask RalphBOT something...")
