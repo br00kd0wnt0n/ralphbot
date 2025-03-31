@@ -1,188 +1,84 @@
 import streamlit as st
-import os
-import datetime
-import time
-import uuid
-from dotenv import load_dotenv
-from pymongo import MongoClient
-from company_knowledge import COMPANY_PROMPT
-
-# This MUST be the first Streamlit command
-st.set_page_config(page_title="RalphBOT NY v1.0", page_icon=":robot_face:")
-
-# Load environment variables
-load_dotenv()
-
-# Check for OpenAI API key
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    st.error("OpenAI API key not found in environment variables.")
-    
-    # Check if it's in Streamlit secrets
-    if "openai" in st.secrets and "OPENAI_API_KEY" in st.secrets["openai"]:
-        api_key = st.secrets["openai"]["OPENAI_API_KEY"]
-        st.success("Found API key in st.secrets['openai']")
-    elif "OPENAI_API_KEY" in st.secrets:
-        api_key = st.secrets["OPENAI_API_KEY"]
-        st.success("Found API key in st.secrets directly")
-    else:
-        st.error("API key not found in Streamlit secrets either")
-        
-if api_key:
-    # Show the first 4 and last 4 characters only
-    safe_key = api_key[:4] + "..." + api_key[-4:] if len(api_key) > 8 else "Key too short"
-    st.info(f"Using API key: {safe_key}")
-else:
-    st.error("No API key available. Bot functionality will be limited.")
-    st.stop()
-
-# Initialize OpenAI with old style API
 import openai
-openai.api_key = api_key
+import os
+import requests
+from datetime import datetime
+from dotenv import load_dotenv
+from company_knowledge import COMPANY_PROMPT
+import uuid
+import threading
+import time
 
-# MongoDB connection handling
-mongo_uri = os.getenv("MONGO_URI", "mongodb+srv://br00kd0wnt0n:XHZo54P7bqrVUIzj@ralphbot.nsyijw5.mongodb.net/?retryWrites=true&w=majority&appName=RalphBot")
-mongodb_available = False
-db = None
+# Load API key from .env file
+load_dotenv()
+client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Only attempt connection if we have a real-looking MongoDB URI
-if mongo_uri != "mongodb://placeholder" and not mongo_uri.startswith("mongodb+srv://br00kd0wnt0n:XHZo54P7bqrVUIzj@ralphbot.nsyijw5.mongodb.net/?retryWrites=true&w=majority&appName=RalphBot"):
-    try:
-        db_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
-        # Test the connection
-        db_client.admin.command('ping')
-        db = db_client.ralphbot_analytics
-        mongodb_available = True
-        print("MongoDB connection successful")
-    except Exception as e:
-        print(f"MongoDB connection failed: {e}")
-        mongodb_available = False
-else:
-    print("MongoDB URI not provided, analytics features disabled")
+# API Configuration
+API_BASE_URL = "https://ralphbot-api-ef7a0f4b6655.herokuapp.com"
 
-# Logging function with MongoDB availability check
-def log_interaction(user_id, query, response, bot_type, metadata=None):
-    """Log bot interaction to MongoDB if available"""
-    if not mongodb_available:
-        return
+# Generate or retrieve unique session ID
+def get_session_id():
+    if 'session_id' not in st.session_state:
+        st.session_state.session_id = str(uuid.uuid4())
+    return st.session_state.session_id
+
+# Send heartbeat to API
+def send_heartbeat():
+    while True:
+        try:
+            response = requests.post(
+                f"{API_BASE_URL}/heartbeat", 
+                json={"bot_type": "streamlit"},
+                timeout=10
+            )
+            if response.status_code != 200:
+                st.warning("Failed to send heartbeat")
+        except Exception as e:
+            st.error(f"Heartbeat failed: {str(e)}")
         
-    try:
-        interaction = {
-            "timestamp": datetime.datetime.now(),
-            "interaction_id": str(uuid.uuid4()),
-            "user_id": user_id,
-            "query": query,
-            "response": response,
-            "bot_type": bot_type,
-            "response_time_ms": metadata.get("response_time_ms", 0),
-            "token_usage": metadata.get("token_usage", 0),
-            "metadata": metadata or {}
-        }
-        db.interactions.insert_one(interaction)
-    except Exception as e:
-        print(f"Error logging interaction: {e}")
+        # Wait for 60 seconds before next heartbeat
+        time.sleep(60)
 
-# Heartbeat function with availability check
-def update_heartbeat(bot_type):
-    """Update bot heartbeat status in MongoDB if available"""
-    if not mongodb_available:
-        return
-        
+# Log interaction to API
+def log_interaction(interaction_data):
     try:
-        db.bot_status.update_one(
-            {"bot_type": bot_type},
-            {
-                "$set": {
-                    "last_heartbeat": datetime.datetime.now(),
-                    "status": "online"
-                }
-            },
-            upsert=True
+        response = requests.post(
+            f"{API_BASE_URL}/log_interaction", 
+            json=interaction_data,
+            timeout=10
         )
+        if response.status_code != 200:
+            st.warning("Failed to log interaction")
     except Exception as e:
-        print(f"Error updating heartbeat: {e}")
+        st.error(f"Interaction logging failed: {str(e)}")
 
-# Call heartbeat only if MongoDB is available
-if mongodb_available:
-    update_heartbeat("streamlit")
+# Start heartbeat thread
+heartbeat_thread = threading.Thread(target=send_heartbeat, daemon=True)
+heartbeat_thread.start()
 
-# Display logo and title
-st.markdown("""
-<div style='text-align: center; background-color: #E90080; padding: 10px; border-radius: 5px; margin-bottom: 20px;'>
-    <h1 style='color: white; font-family: monospace;'>RALPH</h1>
-</div>
-""", unsafe_allow_html=True)
+# App title and styling
+st.set_page_config(page_title="RalphBOT NY", page_icon=":robot_face:")
+st.title("RalphBOT NY v0.1")
 
-st.title("RalphBOT NY v1.0")
+# Add after the title
+st.image("assets/logo.png", width=200)
 
-# Initialize chat history
+# Initialize session state for chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
-# Generate a session ID if not already present
-if "session_id" not in st.session_state:
-    st.session_state.session_id = str(uuid.uuid4())
-
-# Initialize state variables if they don't exist
-if "clicked_question" not in st.session_state:
-    st.session_state.clicked_question = None
-
-# Function to set clicked question
-def set_question(question):
-    st.session_state.clicked_question = question
 
 # Display chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
-        st.markdown(message["content"], unsafe_allow_html=True)
-
-# Create suggestion buttons when no conversation yet
-if len(st.session_state.messages) == 0:
-    st.markdown("##### Try asking about:")
-    
-    # Custom CSS for equal width buttons
-    st.markdown("""
-    <style>
-    div.stButton > button {
-        width: 100%;
-        background-color: #E90080;
-        color: white;
-    }
-    div.stButton > button:hover {
-        background-color: #C50070;
-        color: white;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Create columns and buttons
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.button("Services", key="btn_services", 
-                 on_click=set_question, 
-                 args=("What services does Ralph offer?",))
-    with col2:
-        st.button("Company History", key="btn_history", 
-                 on_click=set_question, 
-                 args=("Tell me about Ralph's history",))
-    with col3:
-        st.button("Offices", key="btn_offices", 
-                 on_click=set_question, 
-                 args=("Where are Ralph's offices located?",))
+        st.markdown(message["content"])
 
 # Get user input
-user_input = st.chat_input("Ask RalphBOT something...")
+user_query = st.chat_input("Ask RalphBOT something...")
 
-# Determine the actual query (from button or direct input)
-user_query = None
-if st.session_state.clicked_question:
-    user_query = st.session_state.clicked_question
-    st.session_state.clicked_question = None  # Clear for next time
-elif user_input:
-    user_query = user_input
-
-# Process query if we have one
 if user_query:
+    # Record start time for response time tracking
+    start_time = datetime.now()
+    
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": user_query})
     
@@ -203,46 +99,36 @@ if user_query:
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
         full_response = ""
-
+        
         try:
-            # Measure response time
-            start_time = time.time()
-            
-            # Old style API call
-            response = openai.ChatCompletion.create(
+            stream = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=api_messages,
                 stream=True
             )
             
-            # Stream the response (old style)
-            for chunk in response:
-                if 'content' in chunk.choices[0].delta and chunk.choices[0].delta.content is not None:
+            # Stream the response
+            for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta.content is not None:
                     content = chunk.choices[0].delta.content
                     full_response += content
-                    message_placeholder.markdown(full_response + "▌", unsafe_allow_html=True)
+                    message_placeholder.markdown(full_response + "▌")
+            
+            message_placeholder.markdown(full_response)
             
             # Calculate response time
-            end_time = time.time()
-            response_time_ms = int((end_time - start_time) * 1000)
+            response_time = (datetime.now() - start_time).total_seconds() * 1000
             
-            # Final response without cursor
-            message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            
-            # Log the interaction if MongoDB is available
-            metadata = {
-                "response_time_ms": response_time_ms,
-                "session_length": len(st.session_state.messages),
-                "platform": "web"
+            # Log interaction
+            interaction_data = {
+                "timestamp": datetime.now().isoformat(),
+                "user_id": get_session_id(),
+                "bot_type": "streamlit",
+                "query": user_query,
+                "response": full_response,
+                "response_time_ms": response_time
             }
-            
-            log_interaction(
-                user_id=st.session_state.session_id, 
-                query=user_query, 
-                response=full_response, 
-                bot_type="streamlit",
-                metadata=metadata
-            )
+            log_interaction(interaction_data)
             
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
@@ -251,17 +137,3 @@ if user_query:
     
     # Add assistant response to chat history
     st.session_state.messages.append({"role": "assistant", "content": full_response})
-    
-    # Re-run the app to show the updated conversation and input field
-    st.rerun()
-
-# Add a sidebar with additional information
-with st.sidebar:
-    st.title("About RalphBOT")
-    st.write("RalphBOT is an AI assistant for Ralph agency.")
-    st.write("Ask questions about Ralph's services, history, and expertise.")
-    
-    # Add a reset button
-    if st.button("Reset Chat"):
-        st.session_state.messages = []
-        st.rerun()
