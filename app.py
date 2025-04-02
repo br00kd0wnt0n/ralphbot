@@ -71,44 +71,90 @@ if "clicked_question" not in st.session_state:
 def set_question(question):
     st.session_state.clicked_question = question
 
+# Custom CSS for equal width buttons
+st.markdown("""
+<style>
+div.stButton > button {
+    width: 100%;
+    background-color: #E90080;
+    color: white;
+}
+div.stButton > button:hover {
+    background-color: #C50070;
+    color: white;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # Display chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"], unsafe_allow_html=True)
 
-# Create suggestion buttons when no conversation yet
+# Create suggestion buttons - different questions based on conversation state
+st.markdown("##### Try asking about:")
+
+# Create columns and buttons with different questions based on conversation state
+col1, col2, col3 = st.columns(3)
+
 if len(st.session_state.messages) == 0:
-    st.markdown("##### Try asking about:")
-    
-    # Custom CSS for equal width buttons
-    st.markdown("""
-    <style>
-    div.stButton > button {
-        width: 100%;
-        background-color: #E90080;
-        color: white;
-    }
-    div.stButton > button:hover {
-        background-color: #C50070;
-        color: white;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Create columns and buttons
-    col1, col2, col3 = st.columns(3)
+    # Initial questions for new conversation
     with col1:
         st.button("Services", key="btn_services", 
-                 on_click=set_question, 
-                 args=("What services does Ralph offer?",))
+                on_click=set_question, 
+                args=("What services does Ralph offer?",))
     with col2:
         st.button("Company History", key="btn_history", 
-                 on_click=set_question, 
-                 args=("Tell me about Ralph's history",))
+                on_click=set_question, 
+                args=("Tell me about Ralph's history",))
     with col3:
         st.button("Offices", key="btn_offices", 
-                 on_click=set_question, 
-                 args=("Where are Ralph's offices located?",))
+                on_click=set_question, 
+                args=("Where are Ralph's offices located?",))
+else:
+    # Different questions after conversation has started
+    # Use modulo to cycle through sets of questions based on message count
+    question_set = (len(st.session_state.messages) // 2) % 3
+    
+    if question_set == 0:
+        with col1:
+            st.button("Team", key="btn_team", 
+                    on_click=set_question, 
+                    args=("Who are the key team members at Ralph?",))
+        with col2:
+            st.button("Pricing", key="btn_pricing", 
+                    on_click=set_question, 
+                    args=("How does Ralph price its services?",))
+        with col3:
+            st.button("Case Studies", key="btn_case", 
+                    on_click=set_question, 
+                    args=("Can you share a recent case study?",))
+    elif question_set == 1:
+        with col1:
+            st.button("Process", key="btn_process", 
+                    on_click=set_question, 
+                    args=("What is Ralph's design process?",))
+        with col2:
+            st.button("Industries", key="btn_industries", 
+                    on_click=set_question, 
+                    args=("Which industries does Ralph specialize in?",))
+        with col3:
+            st.button("Contact", key="btn_contact", 
+                    on_click=set_question, 
+                    args=("How can I contact the Ralph team?",))
+    else:
+        with col1:
+            st.button("Technology", key="btn_tech", 
+                    on_click=set_question, 
+                    args=("What technologies does Ralph work with?",))
+        with col2:
+            st.button("Timeline", key="btn_timeline", 
+                    on_click=set_question, 
+                    args=("What's a typical project timeline?",))
+        with col3:
+            st.button("Portfolio", key="btn_portfolio", 
+                    on_click=set_question, 
+                    args=("Where can I see Ralph's portfolio?",))
 
 # Get user input
 user_input = st.chat_input("Ask RalphBOT something...")
