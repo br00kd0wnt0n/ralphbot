@@ -91,70 +91,93 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"], unsafe_allow_html=True)
 
+# Generate suggestion topics from company knowledge
+from company_knowledge import COMPANY_PROMPT
+
+def extract_topics_from_prompt(prompt_text):
+    """Extract potential topics from the company prompt"""
+    # Initialize with some fallback topics
+    default_topics = [
+        {"title": "Services", "question": "What services does Ralph offer?"},
+        {"title": "History", "question": "Tell me about Ralph's history"},
+        {"title": "Offices", "question": "Where are Ralph's offices located?"},
+        {"title": "Team", "question": "Who are the key team members at Ralph?"},
+        {"title": "Process", "question": "What is Ralph's design process?"},
+        {"title": "Industries", "question": "Which industries does Ralph specialize in?"},
+        {"title": "Contact", "question": "How can I contact the Ralph team?"},
+        {"title": "Portfolio", "question": "Where can I see Ralph's portfolio?"}
+    ]
+    
+    # Try to extract likely topics from the prompt
+    try:
+        # Keywords to look for in the company prompt
+        potential_keywords = [
+            "services", "offerings", "solutions", "expertise", "capabilities",
+            "locations", "offices", "headquarters", "team", "leadership",
+            "founders", "history", "story", "mission", "values", "clients",
+            "projects", "case studies", "portfolio", "industries", "sectors",
+            "process", "approach", "methodology", "pricing", "contact", 
+            "technologies", "awards", "recognition", "partnerships"
+        ]
+        
+        # Check which keywords are mentioned in the prompt
+        found_topics = []
+        for keyword in potential_keywords:
+            if keyword.lower() in prompt_text.lower():
+                # Create a capitalized title and question
+                title = keyword.capitalize()
+                question = f"Tell me about Ralph's {keyword.lower()}"
+                
+                # Customize questions for common topics
+                if keyword == "services":
+                    question = "What services does Ralph offer?"
+                elif keyword == "offices" or keyword == "locations":
+                    question = "Where is Ralph located?"
+                elif keyword == "team" or keyword == "leadership":
+                    question = "Who are the key people at Ralph?"
+                elif keyword == "contact":
+                    question = "How can I get in touch with Ralph?"
+                    
+                found_topics.append({"title": title, "question": question})
+        
+        # Return found topics if any, otherwise return defaults
+        return found_topics if found_topics else default_topics
+    except:
+        # If any error occurs, return the default topics
+        return default_topics
+
+# Get topics from the company prompt
+all_topics = extract_topics_from_prompt(COMPANY_PROMPT)
+
 # Create suggestion buttons - different questions based on conversation state
 st.markdown("##### Try asking about:")
 
 # Create columns and buttons with different questions based on conversation state
 col1, col2, col3 = st.columns(3)
 
-if len(st.session_state.messages) == 0:
-    # Initial questions for new conversation
-    with col1:
-        st.button("Services", key="btn_services", 
-                on_click=set_question, 
-                args=("What services does Ralph offer?",))
-    with col2:
-        st.button("Company History", key="btn_history", 
-                on_click=set_question, 
-                args=("Tell me about Ralph's history",))
-    with col3:
-        st.button("Offices", key="btn_offices", 
-                on_click=set_question, 
-                args=("Where are Ralph's offices located?",))
-else:
-    # Different questions after conversation has started
-    # Use modulo to cycle through sets of questions based on message count
-    question_set = (len(st.session_state.messages) // 2) % 3
-    
-    if question_set == 0:
-        with col1:
-            st.button("Team", key="btn_team", 
-                    on_click=set_question, 
-                    args=("Who are the key team members at Ralph?",))
-        with col2:
-            st.button("Pricing", key="btn_pricing", 
-                    on_click=set_question, 
-                    args=("How does Ralph price its services?",))
-        with col3:
-            st.button("Case Studies", key="btn_case", 
-                    on_click=set_question, 
-                    args=("Can you share a recent case study?",))
-    elif question_set == 1:
-        with col1:
-            st.button("Process", key="btn_process", 
-                    on_click=set_question, 
-                    args=("What is Ralph's design process?",))
-        with col2:
-            st.button("Industries", key="btn_industries", 
-                    on_click=set_question, 
-                    args=("Which industries does Ralph specialize in?",))
-        with col3:
-            st.button("Contact", key="btn_contact", 
-                    on_click=set_question, 
-                    args=("How can I contact the Ralph team?",))
-    else:
-        with col1:
-            st.button("Technology", key="btn_tech", 
-                    on_click=set_question, 
-                    args=("What technologies does Ralph work with?",))
-        with col2:
-            st.button("Timeline", key="btn_timeline", 
-                    on_click=set_question, 
-                    args=("What's a typical project timeline?",))
-        with col3:
-            st.button("Portfolio", key="btn_portfolio", 
-                    on_click=set_question, 
-                    args=("Where can I see Ralph's portfolio?",))
+# Determine which set of topics to show based on conversation progress
+topics_per_set = 3
+total_sets = max(1, len(all_topics) // topics_per_set)
+current_set_index = (len(st.session_state.messages) // 2) % total_sets
+
+# Get the current set of topics to display
+start_idx = current_set_index * topics_per_set
+end_idx = min(start_idx + topics_per_set, len(all_topics))
+current_topics = all_topics[start_idx:end_idx]
+
+# Ensure we have exactly 3 topics for our columns
+while len(current_topics) < 3:
+    # Add topics from the beginning if we don't have enough
+    extra_idx = len(current_topics) % len(all_topics)
+    current_topics.append(all_topics[extra_idx])
+
+# Display buttons for the current topics
+columns = [col1, col2, col3]
+for i, (column, topic) in enumerate(zip(columns, current_topics)):
+    with column:
+        st.button(topic["title"], key=f"btn_topic_{i}", 
+                 on_click=set_question, 
+                 args=(topic["question"],))
 
 # Get user input
 user_input = st.chat_input("Ask RalphBOT something...")
