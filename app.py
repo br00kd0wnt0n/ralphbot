@@ -4,10 +4,13 @@ import datetime
 import time
 import uuid
 from dotenv import load_dotenv
-from company_knowledge import COMPANY_PROMPT
+from openai import OpenAI
 
 # This MUST be the first Streamlit command
 st.set_page_config(page_title="RalphBOT NY v1.0", page_icon=":robot_face:")
+
+# Import company prompt from external file
+from company_knowledge import COMPANY_PROMPT
 
 # Load environment variables
 load_dotenv()
@@ -35,75 +38,13 @@ else:
     st.error("No API key available. Bot functionality will be limited.")
     st.stop()
 
-# Initialize OpenAI with old style API
-import openai
-openai.api_key = api_key
+# Initialize OpenAI client with new API style
+client = OpenAI(api_key=api_key)
 
-# MongoDB connection handling
-mongo_uri = os.getenv("MONGO_URI", "mongodb://placeholder")
-mongodb_available = False
-db = None
-
-# Only attempt connection if we have a real-looking MongoDB URI
-if mongo_uri != "mongodb://placeholder" and not mongo_uri.startswith("mongodb://placeholder"):
-    try:
-        db_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
-        # Test the connection
-        db_client.admin.command('ping')
-        db = db_client.ralphbot_analytics
-        mongodb_available = True
-        print("MongoDB connection successful")
-    except Exception as e:
-        print(f"MongoDB connection failed: {e}")
-        mongodb_available = False
-else:
-    print("MongoDB URI not provided, analytics features disabled")
-
-# Logging function with MongoDB availability check
+# Simple logging function (no MongoDB)
 def log_interaction(user_id, query, response, bot_type, metadata=None):
-    """Log bot interaction to MongoDB if available"""
-    if not mongodb_available:
-        return
-        
-    try:
-        interaction = {
-            "timestamp": datetime.datetime.now(),
-            "interaction_id": str(uuid.uuid4()),
-            "user_id": user_id,
-            "query": query,
-            "response": response,
-            "bot_type": bot_type,
-            "response_time_ms": metadata.get("response_time_ms", 0),
-            "token_usage": metadata.get("token_usage", 0),
-            "metadata": metadata or {}
-        }
-        db.interactions.insert_one(interaction)
-    except Exception as e:
-        print(f"Error logging interaction: {e}")
-
-# Heartbeat function with availability check
-def update_heartbeat(bot_type):
-    """Update bot heartbeat status in MongoDB if available"""
-    if not mongodb_available:
-        return
-        
-    try:
-        db.bot_status.update_one(
-            {"bot_type": bot_type},
-            {
-                "$set": {
-                    "last_heartbeat": datetime.datetime.now(),
-                    "status": "online"
-                }
-            },
-            upsert=True
-        )
-    except Exception as e:
-        print(f"Error updating heartbeat: {e}")
-
-# Call heartbeat only if MongoDB is available
-if mongodb_available:
-    update_heartbeat("streamlit")
+    """Log bot interaction to console only"""
+    print(f"[LOG] User: {user_id} | Query: {query} | Bot: {bot_type} | Time: {metadata.get('response_time_ms', 0)}ms")
 
 # Display logo and title
 st.markdown("""
@@ -207,16 +148,16 @@ if user_query:
             # Measure response time
             start_time = time.time()
             
-            # Old style API call
-            response = openai.ChatCompletion.create(
+            # New style API call with streaming
+            response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=api_messages,
                 stream=True
             )
             
-            # Stream the response (old style)
+            # Stream the response (new style)
             for chunk in response:
-                if 'content' in chunk.choices[0].delta and chunk.choices[0].delta.content is not None:
+                if chunk.choices[0].delta.content is not None:
                     content = chunk.choices[0].delta.content
                     full_response += content
                     message_placeholder.markdown(full_response + "▌", unsafe_allow_html=True)
@@ -228,7 +169,7 @@ if user_query:
             # Final response without cursor
             message_placeholder.markdown(full_response, unsafe_allow_html=True)
             
-            # Log the interaction if MongoDB is available
+            # Log the interaction to console
             metadata = {
                 "response_time_ms": response_time_ms,
                 "session_length": len(st.session_state.messages),
