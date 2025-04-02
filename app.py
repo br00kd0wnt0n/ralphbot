@@ -4,7 +4,6 @@ import datetime
 import time
 import uuid
 from dotenv import load_dotenv
-from pymongo import MongoClient
 from company_knowledge import COMPANY_PROMPT
 
 # This MUST be the first Streamlit command
